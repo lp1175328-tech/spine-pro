@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpinePro Reminder</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        const { useState, useEffect, useRef } = React;
+
+        function SpineProReminder() {
+            const [reminders, setReminders] = useState([
+                "09:00",
+                "11:00",
+                "14:00",
+            ]);
+            const [newTime, setNewTime] = useState("");
+            const [enabled, setEnabled] = useState(true);
+            const [lastTriggered, setLastTriggered] = useState("");
+            const audioRef = useRef(null);
+
+            useEffect(() => {
+                audioRef.current = new Audio(
+                    "https://actions.google.com/sounds/v1/alarms/beep_short.ogg"
+                );
+
+                const interval = setInterval(() => {
+                    if (!enabled) return;
+
+                    const now = new Date();
+                    const currentTime = now.toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                    });
+
+                    if (
+                        reminders.includes(currentTime) &&
+                        lastTriggered !== currentTime
+                    ) {
+                        setLastTriggered(currentTime);
+
+                        if (navigator.vibrate) {
+                            navigator.vibrate([300, 100, 300]);
+                        }
+
+                        if (audioRef.current) {
+                            audioRef.current.play().catch(() => {});
+                        }
+
+                        alert(
+                            "🦴 SpinePro Reminder\n\nĐã đến lúc đứng dậy, giãn cơ và chỉnh lại tư thế ngồi."
+                        );
+                    }
+                }, 1000);
+
+                return () => clearInterval(interval);
+            }, [reminders, enabled, lastTriggered]);
+
+            const addReminder = () => {
+                if (!newTime) return;
+
+                if (!reminders.includes(newTime)) {
+                    setReminders([...reminders, newTime].sort());
+                }
+
+                setNewTime("");
+            };
+
+            const removeReminder = (time) => {
+                setReminders(reminders.filter((t) => t !== time));
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+                    <div className="bg-white rounded-3xl shadow-xl p-6 w-full max-w-md space-y-6">
+                        <div>
+                            <h1 className="text-3xl font-bold">SpinePro</h1>
+                            <p className="text-gray-500 mt-1">
+                                Widget nhắc bảo vệ cột sống có âm thanh và rung.
+                            </p>
+                        </div>
+
+                        <div className="bg-blue-50 rounded-2xl p-4">
+                            <div className="text-sm text-gray-500">Trạng thái</div>
+                            <div className="flex items-center justify-between mt-2">
+                                <span className="font-medium">
+                                    {enabled ? "Đang hoạt động" : "Đã tắt"}
+                                </span>
+
+                                <button
+                                    onClick={() => setEnabled(!enabled)}
+                                    className={`px-4 py-2 rounded-xl text-white transition ${
+                                        enabled ? "bg-green-500" : "bg-gray-400"
+                                    }`}
+                                >
+                                    {enabled ? "ON" : "OFF"}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex gap-2">
+                                <input
+                                    type="time"
+                                    value={newTime}
+                                    onChange={(e) => setNewTime(e.target.value)}
+                                    className="border rounded-xl px-3 py-2 flex-1"
+                                />
+
+                                <button
+                                    onClick={addReminder}
+                                    className="bg-black text-white px-4 py-2 rounded-xl"
+                                >
+                                    Thêm
+                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                {reminders.map((time) => (
+                                    <div
+                                        key={time}
+                                        className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3"
+                                    >
+                                        <span className="font-medium">⏰ {time}</span>
+
+                                        <button
+                                            onClick={() => removeReminder(time)}
+                                            className="text-red-500"
+                                        >
+                                            Xóa
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-yellow-50 p-4 rounded-2xl text-sm text-gray-700">
+                            ⚠️ Trên điện thoại, hãy mở widget ít nhất một lần và cho phép âm thanh để thông báo hoạt động ổn định.
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SpineProReminder />);
+    </script>
+</body>
+</html>
